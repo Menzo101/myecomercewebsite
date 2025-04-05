@@ -22,7 +22,7 @@ const postproduct = async (req, res) => {
         res.status(201).json({ message: "product created successful" })
     } catch (error) {
         console.log(error.message)
-        return res.status(400).json({ message: "Error Occured !!" })
+        return res.status(404).json({ message: "Error Occured !!" })
     }
 }
 const getproduct = async (req, res) => {
@@ -31,7 +31,7 @@ const getproduct = async (req, res) => {
         res.status(200).json({ message: "Successful", allproduct })
     } catch (error) {
         console.log(error.message)
-        return res.staus(400).json({ message: "Error Occured!!" })
+        return res.staus(404).json({ message: "Error Occured!!" })
     }
 }
 
@@ -40,14 +40,14 @@ const getAproduct = async( req,res) =>{
         const productid = req.params.id
         const aproduct = await productmodel.findById(productid)
         if(!aproduct){
-          return res.status(400).json({message:"no product found"})
+          return res.status(404).json({message:"no product found"})
         }
         res.status(200).json({
           data:aproduct
         })
     } catch (error) {
          console.log(error.message)
-         return res.status(400).json({message:"Error Occured !"})
+         return res.status(404).json({message:"Error Occured !"})
     }
 }
 const addcart = async (req, res) => {
@@ -55,11 +55,11 @@ const addcart = async (req, res) => {
     try {
         const productid = req.params?.productid
         if (!productid) {
-            return res.status(400), json({ message: "Bad Request" })
+            return res.status(404).json({ message: "Bad Request" })
         };
         const product = await productmodel.findOne({ _id: productid })
         if (!product) {
-            return res.status(400).json({ message: "No Product Found!!" })
+            return res.status(404).json({ message: "No Product Found!!" })
         };
         let price = product.price;
         if (req.query?.quantity) {
@@ -74,26 +74,56 @@ const addcart = async (req, res) => {
         res.status(200).json({ message: "Product have been saved to cart" })
     } catch (error) {
         console.log(error.message)
-        return res.status(400).json({ message: "Error Occured !!" })
+        return res.status(404).json({ message: "Error Occured !!" })
     }
 }
 const getcart = async (req, res) => {
     const user = req.user
     try {
-        const allcart = await cartmodel.find({ addedBy:user._id,  active: true, checkout: false })
+        const allcart = await cartmodel.find({ addedBy:user._id,  active: true, checkout: false }).populate({path:"Products",select:"productname price images"})
         res.status(200).json({ message: "successful", allcart })
     } catch (error) {
         console.log(error.message)
-        return res.status(400).json({ message: "Error Occured here !!", })
+        return res.status(404).json({ message: "Error Occured here !!" })
+    }
+}
+const deletecart = async (req, res) => {
+    const { cartid } = req.params;
+
+    try {
+        // First try finding by ID
+        let deletedItem = await cartmodel.findByIdAndDelete(cartid);
+        
+        // If not found by ID, try finding by product ID
+        if (!deletedItem) {
+            deletedItem = await cartmodel.findOneAndDelete({
+                product: cartItemId,
+                checkout: false
+            });
+        }
+
+        if (!deletedItem) {
+            return res.status(404).json({ message: "Cart item not found" });
+        }
+
+        res.status(200).json({ 
+            message: "Cart item removed successfully",
+            deletedItem
+        });
+    } catch (error) {
+        console.log(error.message);
+        return res.status(404).json({ 
+            message: "Error occurred while removing cart item",
+          
+        });
     }
 };
 const getHome = async(req,res) =>{
-   try {
-       const allproduct = await productmodel.find().sort({ createdAt: -1 })
-       res.status(200).json({ message: "successful", allproduct })
+   try { 
+    res.status(200).json({ message: "welcome to the vegist Api" })
    } catch (error) {
      console.log(error.message)
-     return res.status(400).json({ message: "Error Occured !!" })
+     return res.status(404).json({ message: "Error Occured !!" })
    }
 }
-module.exports ={getproduct,postproduct,addcart,getcart,getAproduct, getHome}
+module.exports ={getproduct,postproduct,addcart,getcart,getAproduct, getHome, deletecart}

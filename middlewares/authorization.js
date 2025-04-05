@@ -7,17 +7,17 @@ const protected = async (req, res, next) => {
     try {
         const token = req.cookies?.newapi
         if (!token) {
-            return res.status(401).json({ message: "no token found" });
+            return res.status(404).json({ message: "no token found" });
         }
         const decode = jwt.verify(token, process.env.SECRETPIN)
         if (!decode) {
             res.clearCookie("newapi")
-            return res.status(401).json({ message: "non authorize token found" })
+            return res.status(404).json({ message: "non authorize token found" })
         }
         const currentuser = await accountmodel.findById(decode.userid).select("-password");
         if (!currentuser) {
             res.clearCookie("newapi")
-            return res.status(400).json({ message: "auauthorize login" })
+            return res.status(404).json({ message: "auauthorize login" })
         }
         req.user = currentuser
         next();
@@ -27,7 +27,7 @@ const protected = async (req, res, next) => {
         if (token) {
           res.clearCookie("newapi")
         }
-        return res.status(400).json({ message: "Error Occured " })
+        return res.status(404).json({ message: "Error Occured " })
     }
 }
 const checkuser = async (req, res, next) => {
